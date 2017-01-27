@@ -39,7 +39,7 @@ $/ = "\n";
 sub url_pointer{
 # URL pointer list
 	my $article = shift;
-	die "Number of article exceed maximun\n", if $article >= $header{"articleCount"};
+	die "Number of articles $article exceed maximum ".$header{"articleCount"}."\n", if $article >= $header{"articleCount"};
 	my $pos = $header{"urlPtrPos"};
 	$pos += $article*8;
 	seek(FILE, $pos, 0);
@@ -53,7 +53,7 @@ sub url_pointer{
 sub title_pointer{
 # title pointer list
 	my $article_by_title = shift;
-	die "Number of article exceed maximun\n", if $article_by_title >= $header{"articleCount"};
+	die "Number of articles by title $article_by_title exceed maximum ".$header{"articleCount"}."\n", if $article_by_title >= $header{"articleCount"};
 	my $pos = $header{"titlePtrPos"};
 	$pos += $article_by_title*4;
 	seek(FILE, $pos,0);
