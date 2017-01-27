@@ -211,7 +211,7 @@ sub output_article{
 				close(INDEX);
 			}
 			# search index
-			print "Searching $url into $file\n";
+			print "Searching for [$url] from index file $file\n";
 			my $message = "<html><body>\n" ;
 			open(INDEX, "$file");
 			while(<INDEX>){
