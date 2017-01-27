@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
+use Socket;
 
 # open «file.zim». For more information see internet «openzim.org»
 open (FILE, $ARGV[0]) || die "File not found.\n";
@@ -243,6 +244,7 @@ my ($PF_UNIX, $PF_INET, $PF_IMPLINK, $PF_NS) = (1..4) ;
 my ($SOCK_STREAM, $SOCK_DGRAM, $SOCK_RAW, $SOCK_SEQPACKET, $SOCK_RDM) = (1..5) ;
 my ($d1, $d2, $prototype) = getprotobyname ("tcp");
 socket(SSOCKET, $PF_INET, $SOCK_STREAM, $prototype) || die "socket: $!";
+setsockopt(SSOCKET, SOL_SOCKET, SO_REUSEADDR, 1);
 bind(SSOCKET, pack("SnCCCCx8", 2, $server_port, split(/\./,$server_ip))) || die "bind: $!";
 listen(SSOCKET, 5) || die "connect: $!";
 
