@@ -221,7 +221,9 @@ sub output_article{
 				}
 			}
 			$message .= "</body></html>\n";
-			$article{mimetype} = 0; # need for Content-Type: text/html; charset=utf-8
+                        # Find text/html in the mime array, we need to return this as the Content-Type
+                        use List::MoreUtils 'first_index';
+                        $article{mimetype} = first_index { /text\/html/ } @mime;
 			return $message;
 		}
 	}
