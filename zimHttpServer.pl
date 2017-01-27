@@ -293,6 +293,9 @@ while(1){
 		my $message_body  = &output_article($url);
 		my $message_body_length = length($message_body);
 		my $message_body_type = $mime[$article{"mimetype"}];
+
+                print STDERR "Returning $url with $mime[$article{\"mimetype\"}], namespace=$article{\"namespace\"}, cluster=$article{\"cluster_number\"}, number=$article{\"number\"}\n";
+
 #		print STDERR "\x1b[31m$$: sending ... $article{number} \c[[41;38;1m/$article{namespace}/$article{url}\c[[m\n";
 		my $message = "HTTP/1.1 200 OK\r
 Connection: Keep-Alive\r
