@@ -122,8 +122,9 @@ sub cluster_blob{
 	if($cluster{"compression_type"} == 4){
 		my $data_compressed;
 		read(FILE, $data_compressed, $size);
-#		my $file = "/tmp/$$-cluster-$cluster";
-		my $file = "/tmp/$ARGV[0]_cluster$cluster-pid$$";
+		my $file = "/tmp/$$-cluster-$cluster";
+# The following line breaks because it includes the absolute path of arg0
+#		my $file = "/tmp/$ARGV[0]_cluster$cluster-pid$$";
 		open(DATA, ">$file.xz");
 		print DATA $data_compressed;
 		close(DATA);
