@@ -6,6 +6,8 @@ use Socket;
 # open «file.zim». For more information see internet «openzim.org»
 print "Opening ZIM file $ARGV[0]\n";
 use Fcntl;
+use Fcntl 'SEEK_CUR';
+use Fcntl 'SEEK_SET';
 # O_LARGEFILE for > 4Gb files is included with sysopen() automatically
 sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
 
@@ -149,6 +151,7 @@ sub cluster_blob{
             $size64 = $size64 - 1;
             $adjust = 1;
         }
+        print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size, which should not happen\n";
         # Implement 64-bit seek
         seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
         for (my $i=0; $i < $pos64; $i++) {
@@ -183,14 +186,16 @@ sub cluster_blob{
 		close(DATA);
 		`rm $file`;
 		return $ret;
-	}else{
+        } elsif ($cluster{"compression_type"} == 1) {
 		my $data;
 		read(FILE, $data, $size);
 		$_ = substr $data, $blob*4, 4;my $posStart = unpack("I");
 		$_ = substr $data, $blob*4+4, 4;my $posEnd = unpack("I");
 		$ret = substr $data, $posStart, $posEnd-$posStart;
 		return $ret;
-	}
+	} else {
+            die "Invalid compression_type $cluster{\"compression_type\"} detected!\n";
+        }
 }
 
 
