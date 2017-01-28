@@ -4,6 +4,7 @@ use strict;
 use Socket;
 
 # open «file.zim». For more information see internet «openzim.org»
+print "Opening ZIM file $ARGV[0]\n";
 open (FILE, $ARGV[0]) || die "File not found.\n";
 
 # read and load HEADER into «file.zim»
@@ -14,13 +15,22 @@ read(FILE, $_, 4); $header{"version"} = unpack("I");
 read(FILE, $_, 16); $header{"uuid"} = unpack("H*");
 read(FILE, $_, 4); $header{"articleCount"} = unpack("I");
 read(FILE, $_, 4); $header{"clusterCount"} = unpack("I");
-read(FILE, $_, 8); $header{"urlPtrPos"} = unpack("Q");
-read(FILE, $_, 8); $header{"titlePtrPos"} = unpack("Q");
-read(FILE, $_, 8); $header{"clusterPtrPos"} = unpack("Q");
-read(FILE, $_, 8); $header{"mimeListPos"} = unpack("Q");
+
+read(FILE, $_, 4); $header{"urlPtrPos"} = unpack("I");     read(FILE, $_, 4); $header{"zero1"} = unpack("I");
+read(FILE, $_, 4); $header{"titlePtrPos"} = unpack("I");   read(FILE, $_, 4); $header{"zero2"} = unpack("I");
+read(FILE, $_, 4); $header{"clusterPtrPos"} = unpack("I"); read(FILE, $_, 4); $header{"zero3"} = unpack("I");
+read(FILE, $_, 4); $header{"mimeListPos"} = unpack("I");   read(FILE, $_, 4); $header{"zero4"} = unpack("I");
 read(FILE, $_, 4); $header{"mainPage"} = unpack("I");
 read(FILE, $_, 4); $header{"layoutPage"} = unpack("I");
 read(FILE, $_, 8); $header{"checksumPos"} = unpack("H*");
+
+# Check that none of the *PtrPos values exceed 32-bits
+die "urlPtrPos exceeds 64-bit, cannot run on 32-bit machine",     if $header{"zero1"} != 0;
+die "titlePtrPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"zero2"} != 0;
+die "clusterPtrPos exceeds 64-bit, cannot run on 32-bit machine", if $header{"zero3"} != 0;
+die "mimeListPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"zero4"} != 0;
+
+print "ZIM header: " . join(", ", %header) . "\n";
 
 # read and load MIME TYPE LIST into «file.zim»
 my @mime;
