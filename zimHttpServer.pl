@@ -254,15 +254,14 @@ sub debug{
 
 # net connection (main procedure)
 my ($server_ip, $server_port) = ("127.0.0.1", 8080);
-my ($PF_UNIX, $PF_INET, $PF_IMPLINK, $PF_NS) = (1..4) ;
-my ($SOCK_STREAM, $SOCK_DGRAM, $SOCK_RAW, $SOCK_SEQPACKET, $SOCK_RDM) = (1..5) ;
 my ($d1, $d2, $prototype) = getprotobyname ("tcp");
-socket(SSOCKET, $PF_INET, $SOCK_STREAM, $prototype) || die "socket: $!";
+socket(SSOCKET, PF_INET, SOCK_STREAM, $prototype) || die "socket: $!";
 setsockopt(SSOCKET, SOL_SOCKET, SO_REUSEADDR, 1);
-bind(SSOCKET, pack("SnCCCCx8", 2, $server_port, split(/\./,$server_ip))) || die "bind: $!";
+# Bind to all network addresses
+bind(SSOCKET, sockaddr_in(8080, INADDR_ANY)) || die "bind: $!";
 listen(SSOCKET, 5) || die "connect: $!";
 
-print "\x1b[34m$0 $$: listen in localhost:8080\c[[33m
+print "\x1b[34m$0 $$: listen in localhost:8080 or <this_ip>:8080\c[[33m
 write url «localhost:8080» in your web-browser.
 to search pattern write url «localhost:8080/pattern»; the first search require some minutes to create «file.index».
 if you know the url, write it («localhost:8080/url»).
