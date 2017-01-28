@@ -89,9 +89,8 @@ sub entry{
 	$article{"number"} = $article;
 	my ($pos64, $pos) = &url_pointer($article);
         seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
-        for (my $i=0; $i < $pos64; $i++) {
-            seek(FILE, 0x80000000, 1);
-            seek(FILE, 0x80000000, 1);
+        for (my $i=0; $i < ($pos64*4); $i++) {
+            seek(FILE, 0x40000000, 1);
         }
 	seek(FILE, $pos,1);
         
@@ -112,6 +111,7 @@ sub entry{
 	chop($article{"title"});
 	$/="\n";
 	read(FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
+        print "entry == @{[%article]}\n";
 }
 
 # read CLUSTER NUMBER into CLUSTER POINTER LIST into «file.zim»
@@ -154,9 +154,8 @@ sub cluster_blob{
         print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
         # Implement 64-bit seek
         seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
-        for (my $i=0; $i < $pos64; $i++) {
-            seek(FILE, 0x80000000, 1);
-            seek(FILE, 0x80000000, 1);
+        for (my $i=0; $i < ($pos64*4); $i++) {
+            seek(FILE, 0x40000000, 1);
         }
 	seek(FILE, $pos, 1);
 
