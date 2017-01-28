@@ -222,8 +222,10 @@ sub output_article{
 			}
 			$message .= "</body></html>\n";
                         # Find text/html in the mime array, we need to return this as the Content-Type
-                        use List::MoreUtils 'first_index';
-                        $article{mimetype} = first_index { /text\/html/ } @mime;
+                        use List::Util qw(first);
+                        $article{mimetype} = first { $mime[$_] eq 'text/html' } 0..$#mime;
+                        # Alternative way that is experimental
+                        # $article{mimetype} = grep { $mime[$_] ~~ "text/html" } 0 .. $#mime;
 			return $message;
 		}
 	}
