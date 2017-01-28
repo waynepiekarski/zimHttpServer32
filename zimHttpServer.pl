@@ -53,8 +53,9 @@ sub url_pointer{
 	my $pos = $header{"urlPtrPos"};
 	$pos += $article*8;
 	seek(FILE, $pos, 0);
-	read(FILE, $_, 8); my $ret = unpack("Q");
-	return $ret;
+        read(FILE, $_, 4); my $ret = unpack("I");
+        read(FILE, $_, 4); my $ret64 = unpack("I");
+	return ($ret64, $ret);
 }
 
 # no used
@@ -82,8 +83,14 @@ sub entry{
 	%article = ();
 	my $article = shift;
 	$article{"number"} = $article;
-	my $pos = &url_pointer($article);
-	seek(FILE, $pos,0);
+	my ($pos64, $pos) = &url_pointer($article);
+        seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
+        for (my $i=0; $i < $pos64; $i++) {
+            seek(FILE, 0x80000000, 1);
+            seek(FILE, 0x80000000, 1);
+        }
+	seek(FILE, $pos,1);
+        
 	read(FILE, $_, 2); $article{"mimetype"} = unpack("s");
 	read(FILE, $_, 1); $article{"parameter_len"} = unpack("H*");
 	read(FILE, $_, 1); $article{"namespace"} = unpack("a");
@@ -112,8 +119,9 @@ sub cluster_pointer{
 	my $pos = $header{"clusterPtrPos"};
 	$pos += $cluster*8;
 	seek(FILE, $pos,0);
-	read(FILE, $_, 8); my $ret = unpack("Q");
-	return $ret;
+	read(FILE, $_, 4); my $ret = unpack("I");
+        read(FILE, $_, 4); my $ret64 = unpack("I");
+	return ($ret64, $ret);
 }
 
 # read CLUSTER NUMBER into «file.zim»
@@ -124,9 +132,30 @@ sub cluster_blob{
 	my $cluster = shift;
 	my $blob = shift;
 	my $ret;
-	my $pos = &cluster_pointer($cluster);
-	my $size = &cluster_pointer($cluster+1) - $pos - 1;
-	seek(FILE, $pos, 0);
+        my ($pos64, $pos) = &cluster_pointer($cluster);
+        my ($size64, $size) = &cluster_pointer($cluster+1);
+        my $old_size = $size;
+        my $old_pos = $pos;
+        my $old_pos64 = $pos64;
+        my $old_size64 = $size64;
+        
+        $size = $size - $pos - 1;
+        my $adjust = 0;
+        $size64 = $size64 - $pos64;
+        # Adjust for 32-bit wraparound
+        if ($old_size < $size) {
+            $size64 = $size64 - 1;
+            $adjust = 1;
+        }
+        # Implement 64-bit seek
+        seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
+        for (my $i=0; $i < $pos64; $i++) {
+            seek(FILE, 0x80000000, 1);
+            seek(FILE, 0x80000000, 1);
+        }
+	seek(FILE, $pos, 1);
+
+        die "Cluster size exceeds 32-bits size64=$size64 != pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size, which should not happen\n", if $size64 != 0;
 	my %cluster;
 	read(FILE, $_, 1); $cluster{"compression_type"} = unpack("C");
 	# compressed
