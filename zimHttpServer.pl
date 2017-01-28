@@ -5,7 +5,9 @@ use Socket;
 
 # open «file.zim». For more information see internet «openzim.org»
 print "Opening ZIM file $ARGV[0]\n";
-open (FILE, $ARGV[0]) || die "File not found.\n";
+use Fcntl;
+# O_LARGEFILE for > 4Gb files is included with sysopen() automatically
+sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
 
 # read and load HEADER into «file.zim»
 my %header;
@@ -307,7 +309,7 @@ while(1){
 	last unless fork;
 }
 # only sons are connected
-open (FILE, $ARGV[0]); # need reopen for son don't use same file handle
+sysopen (FILE, $ARGV[0], O_RDONLY); # need reopen for son don't use same file handle
 while(1){
 	my $http_message;
 #		read
