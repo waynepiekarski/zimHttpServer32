@@ -151,7 +151,7 @@ sub cluster_blob{
             $size64 = $size64 - 1;
             $adjust = 1;
         }
-        print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size, which should not happen\n";
+        print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
         # Implement 64-bit seek
         seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
         for (my $i=0; $i < $pos64; $i++) {
@@ -341,7 +341,7 @@ while(1){
 		my $message_body_length = length($message_body);
 		my $message_body_type = $mime[$article{"mimetype"}];
 
-                print STDERR "Returning $url with $mime[$article{\"mimetype\"}], namespace=$article{\"namespace\"}, cluster=$article{\"cluster_number\"}, number=$article{\"number\"}\n";
+                print STDERR "Returning $url with $mime[$article{\"mimetype\"}], namespace=$article{\"namespace\"}, cluster=$article{\"cluster_number\"}, number=$article{\"number\"}, body_length=$message_body_length\n";
 
 #		print STDERR "\x1b[31m$$: sending ... $article{number} \c[[41;38;1m/$article{namespace}/$article{url}\c[[m\n";
 		my $message = "HTTP/1.1 200 OK\r
