@@ -13,12 +13,37 @@ sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
 
 sub xread {
     my $result = sysread($_[0], $_[1], $_[2]);
+    # my $hex = unpack('H*', $_[1]);
+    # print "sysread buf=($hex) bytes=($_[2])\n";
     die "sysread() failed with mismatch result=$result and arg2=$_[2]", if ($result != $_[2]);
     return $result;
 }
 
 sub xseek {
-    my $result = sysseek($_[0], $_[1], $_[2]);
+    my $result;
+    if ($_[1] > 0x40000000) {
+        # print "sysseek is too large with ofs=$_[1] - needs to be split into many parts\n";
+        # print "sysseek initial ofs=" . 0x40000000 . "==(0x40000000) with dir=$_[2]\n";
+        $result = sysseek($_[0], 0x40000000, $_[2]); # This may be relative or absolute, whatever was requested
+
+        # Keep seeking 1GB at a time until we have done it all
+        my $ofs = $_[1];
+        $ofs = $ofs - 0x40000000;
+        while ($ofs != 0) {
+            if ($ofs > 0x40000000) {
+                # print "sysseek 0x40000000 remaining ofs=$ofs with dir=relative(1)\n";
+                $result = sysseek($_[0], 0x40000000, 1);
+                $ofs = $ofs - 0x40000000;
+            } else {
+                # print "sysseek final remaining ofs=$ofs with dir=relative(1)\n";
+                $result = sysseek($_[0], $ofs, 1);
+                $ofs = 0;
+            }
+        }
+    } else {
+        $result = sysseek($_[0], $_[1], $_[2]);
+        # print "sysseek small to ofs=$_[1] with dir=$_[2]\n";
+    }
     return $result;
 }
 
@@ -182,6 +207,7 @@ sub cluster_blob{
             $adjust = 1;
         }
         print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
+        die "size64 is wrong, data has been corrupted somehow!\n", if $size64 < 0;
         # Implement 64-bit seek
         xseek(\*FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
         for (my $i=0; $i < ($pos64*4); $i++) {
