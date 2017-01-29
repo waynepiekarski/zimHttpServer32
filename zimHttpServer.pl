@@ -12,13 +12,13 @@ use Fcntl 'SEEK_SET';
 sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
 
 sub xread {
-    my $result = read($_[0], $_[1], $_[2]);
+    my $result = sysread($_[0], $_[1], $_[2]);
     die "sysread() failed with mismatch result=$result and arg2=$_[2]", if ($result != $_[2]);
     return $result;
 }
 
 sub xseek {
-    my $result = seek($_[0], $_[1], $_[2]);
+    my $result = sysseek($_[0], $_[1], $_[2]);
     return $result;
 }
 
