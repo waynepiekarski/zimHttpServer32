@@ -45,7 +45,11 @@ die "titlePtrPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"ze
 die "clusterPtrPos exceeds 64-bit, cannot run on 32-bit machine", if $header{"zero3"} != 0;
 die "mimeListPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"zero4"} != 0;
 
-print "ZIM header: " . join(", ", %header) . "\n";
+print "ZIM header: " . join(", ", %header);
+foreach my $name (sort keys %header) {
+    printf "[%s]=[%s] ", $name, $header{$name};
+}
+print "\n";
 
 sub get_null_string {
     my $out = "";
@@ -132,7 +136,12 @@ sub entry{
 	chop($article{"url"});
 	chop($article{"title"});
 	xread(\*FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
-        print "entry == @{[%article]}\n";
+
+        print "entry == ";
+        foreach my $name (sort keys %article) {
+            printf "[%s]=[%s] ", $name, $article{$name};
+        }
+        print "\n";
 }
 
 # read CLUSTER NUMBER into CLUSTER POINTER LIST into «file.zim»
