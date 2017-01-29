@@ -47,17 +47,29 @@ die "mimeListPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"ze
 
 print "ZIM header: " . join(", ", %header) . "\n";
 
+sub get_null_string {
+    my $out = "";
+    while(1) {
+        my $raw;
+        my $result = xread(\*FILE, $raw, 1);
+        my $ch = $raw;
+        $out .= $ch; # Need the terminating \0 included
+        if (unpack("c",$ch) == 0) {
+            last;
+        }
+    }
+    return $out;
+}
+
 # read and load MIME TYPE LIST into «file.zim»
 my @mime;
 xseek(\*FILE, $header{"mimeListPos"}, 0); # no necesary because it must be it
-$/="\x00";
 for(my $a=0; 1; $a++){
-	my $b = <FILE>;
+        my $b = get_null_string();
 	chop($b);
 	last, if($b eq "");
 	$mime[$a] = $b;
 }
-$/ = "\n";
 
 # read ARTICLE NUMBER (sort  by url) into URL POINTER LIST into «file.zim»
 # return ARTICLE NUMBER POINTER
@@ -115,12 +127,10 @@ sub entry{
 		xread(\*FILE, $_, 4); $article{"cluster_number"} = unpack("I");
 		xread(\*FILE, $_, 4); $article{"blob_number"} = unpack("I");
 	}
-	$/="\x00";
-	$article{"url"} = <FILE>;
-	$article{"title"} = <FILE>;
+        $article{"url"} = get_null_string();
+        $article{"title"} = get_null_string();
 	chop($article{"url"});
 	chop($article{"title"});
-	$/="\n";
 	xread(\*FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
         print "entry == @{[%article]}\n";
 }
