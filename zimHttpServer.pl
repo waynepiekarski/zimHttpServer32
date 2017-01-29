@@ -11,22 +11,33 @@ use Fcntl 'SEEK_SET';
 # O_LARGEFILE for > 4Gb files is included with sysopen() automatically
 sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
 
+sub xread {
+    my $result = read($_[0], $_[1], $_[2]);
+    die "sysread() failed with mismatch result=$result and arg2=$_[2]", if ($result != $_[2]);
+    return $result;
+}
+
+sub xseek {
+    my $result = seek($_[0], $_[1], $_[2]);
+    return $result;
+}
+
 # read and load HEADER into «file.zim»
 my %header;
-seek(FILE, 0, 0); # no necesary because it must be it
-read(FILE, $_, 4); $header{"magicNumber"} = unpack("c*"); # ZIM\x04
-read(FILE, $_, 4); $header{"version"} = unpack("I");
-read(FILE, $_, 16); $header{"uuid"} = unpack("H*");
-read(FILE, $_, 4); $header{"articleCount"} = unpack("I");
-read(FILE, $_, 4); $header{"clusterCount"} = unpack("I");
+xseek(\*FILE, 0, 0); # no necesary because it must be it
+xread(\*FILE, $_, 4); $header{"magicNumber"} = unpack("c*"); # ZIM\x04
+xread(\*FILE, $_, 4); $header{"version"} = unpack("I");
+xread(\*FILE, $_, 16); $header{"uuid"} = unpack("H*");
+xread(\*FILE, $_, 4); $header{"articleCount"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"clusterCount"} = unpack("I");
 
-read(FILE, $_, 4); $header{"urlPtrPos"} = unpack("I");     read(FILE, $_, 4); $header{"zero1"} = unpack("I");
-read(FILE, $_, 4); $header{"titlePtrPos"} = unpack("I");   read(FILE, $_, 4); $header{"zero2"} = unpack("I");
-read(FILE, $_, 4); $header{"clusterPtrPos"} = unpack("I"); read(FILE, $_, 4); $header{"zero3"} = unpack("I");
-read(FILE, $_, 4); $header{"mimeListPos"} = unpack("I");   read(FILE, $_, 4); $header{"zero4"} = unpack("I");
-read(FILE, $_, 4); $header{"mainPage"} = unpack("I");
-read(FILE, $_, 4); $header{"layoutPage"} = unpack("I");
-read(FILE, $_, 8); $header{"checksumPos"} = unpack("H*");
+xread(\*FILE, $_, 4); $header{"urlPtrPos"} = unpack("I");     xread(\*FILE, $_, 4); $header{"zero1"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"titlePtrPos"} = unpack("I");   xread(\*FILE, $_, 4); $header{"zero2"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"clusterPtrPos"} = unpack("I"); xread(\*FILE, $_, 4); $header{"zero3"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"mimeListPos"} = unpack("I");   xread(\*FILE, $_, 4); $header{"zero4"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"mainPage"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"layoutPage"} = unpack("I");
+xread(\*FILE, $_, 8); $header{"checksumPos"} = unpack("H*");
 
 # Check that none of the *PtrPos values exceed 32-bits
 die "urlPtrPos exceeds 64-bit, cannot run on 32-bit machine",     if $header{"zero1"} != 0;
@@ -38,7 +49,7 @@ print "ZIM header: " . join(", ", %header) . "\n";
 
 # read and load MIME TYPE LIST into «file.zim»
 my @mime;
-seek(FILE, $header{"mimeListPos"}, 0); # no necesary because it must be it
+xseek(\*FILE, $header{"mimeListPos"}, 0); # no necesary because it must be it
 $/="\x00";
 for(my $a=0; 1; $a++){
 	my $b = <FILE>;
@@ -56,9 +67,9 @@ sub url_pointer{
 	die "Number of articles $article exceed maximum ".$header{"articleCount"}."\n", if $article >= $header{"articleCount"};
 	my $pos = $header{"urlPtrPos"};
 	$pos += $article*8;
-	seek(FILE, $pos, 0);
-        read(FILE, $_, 4); my $ret = unpack("I");
-        read(FILE, $_, 4); my $ret64 = unpack("I");
+	xseek(\*FILE, $pos, 0);
+        xread(\*FILE, $_, 4); my $ret = unpack("I");
+        xread(\*FILE, $_, 4); my $ret64 = unpack("I");
 	return ($ret64, $ret);
 }
 
@@ -71,8 +82,8 @@ sub title_pointer{
 	die "Number of articles by title $article_by_title exceed maximum ".$header{"articleCount"}."\n", if $article_by_title >= $header{"articleCount"};
 	my $pos = $header{"titlePtrPos"};
 	$pos += $article_by_title*4;
-	seek(FILE, $pos,0);
-	read(FILE, $_, 4); my $ret = unpack("I");
+	xseek(\*FILE, $pos,0);
+	xread(\*FILE, $_, 4); my $ret = unpack("I");
 	return $ret;
 }
 
@@ -88,21 +99,21 @@ sub entry{
 	my $article = shift;
 	$article{"number"} = $article;
 	my ($pos64, $pos) = &url_pointer($article);
-        seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
+        xseek(\*FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
         for (my $i=0; $i < ($pos64*4); $i++) {
-            seek(FILE, 0x40000000, 1);
+            xseek(\*FILE, 0x40000000, 1);
         }
-	seek(FILE, $pos,1);
+	xseek(\*FILE, $pos,1);
         
-	read(FILE, $_, 2); $article{"mimetype"} = unpack("s");
-	read(FILE, $_, 1); $article{"parameter_len"} = unpack("H*");
-	read(FILE, $_, 1); $article{"namespace"} = unpack("a");
-	read(FILE, $_, 4); $article{"revision"} = unpack("I");
+	xread(\*FILE, $_, 2); $article{"mimetype"} = unpack("s");
+	xread(\*FILE, $_, 1); $article{"parameter_len"} = unpack("H*");
+	xread(\*FILE, $_, 1); $article{"namespace"} = unpack("a");
+	xread(\*FILE, $_, 4); $article{"revision"} = unpack("I");
 	if($article{"mimetype"} <0){
-		read(FILE, $_, 4); $article{"redirect_index"} = unpack("I");
+		xread(\*FILE, $_, 4); $article{"redirect_index"} = unpack("I");
 	}else{
-		read(FILE, $_, 4); $article{"cluster_number"} = unpack("I");
-		read(FILE, $_, 4); $article{"blob_number"} = unpack("I");
+		xread(\*FILE, $_, 4); $article{"cluster_number"} = unpack("I");
+		xread(\*FILE, $_, 4); $article{"blob_number"} = unpack("I");
 	}
 	$/="\x00";
 	$article{"url"} = <FILE>;
@@ -110,7 +121,7 @@ sub entry{
 	chop($article{"url"});
 	chop($article{"title"});
 	$/="\n";
-	read(FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
+	xread(\*FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
         print "entry == @{[%article]}\n";
 }
 
@@ -122,9 +133,9 @@ sub cluster_pointer{
 	return $header{"checksumPos"}, if $cluster >= $header{"clusterCount"}; # die "Number of cluster exceed maximun\n"
 	my $pos = $header{"clusterPtrPos"};
 	$pos += $cluster*8;
-	seek(FILE, $pos,0);
-	read(FILE, $_, 4); my $ret = unpack("I");
-        read(FILE, $_, 4); my $ret64 = unpack("I");
+	xseek(\*FILE, $pos,0);
+	xread(\*FILE, $_, 4); my $ret = unpack("I");
+        xread(\*FILE, $_, 4); my $ret64 = unpack("I");
 	return ($ret64, $ret);
 }
 
@@ -153,19 +164,19 @@ sub cluster_blob{
         }
         print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
         # Implement 64-bit seek
-        seek(FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
+        xseek(\*FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
         for (my $i=0; $i < ($pos64*4); $i++) {
-            seek(FILE, 0x40000000, 1);
+            xseek(\*FILE, 0x40000000, 1);
         }
-	seek(FILE, $pos, 1);
+	xseek(\*FILE, $pos, 1);
 
         die "Cluster size exceeds 32-bits size64=$size64 != pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size, which should not happen\n", if $size64 != 0;
 	my %cluster;
-	read(FILE, $_, 1); $cluster{"compression_type"} = unpack("C");
+	xread(\*FILE, $_, 1); $cluster{"compression_type"} = unpack("C");
 	# compressed
 	if($cluster{"compression_type"} == 4){
 		my $data_compressed;
-		read(FILE, $data_compressed, $size);
+		xread(\*FILE, $data_compressed, $size);
 		my $file = "/tmp/$$-cluster-$cluster";
 # The following line breaks because it includes the absolute path of arg0
 #		my $file = "/tmp/$ARGV[0]_cluster$cluster-pid$$";
@@ -175,7 +186,7 @@ sub cluster_blob{
 		`xz -d -f $file.xz`;
 		open(DATA, "$file");
 #	my $blob1;
-#	read(DATA, $blob1, 4);
+#	xread(DATA, $blob1, 4);
 #	my $blob_count = int($blob1/4);
 		seek(DATA, $blob*4, 0);
 		read(DATA, $_, 4); my $posStart = unpack("I");
@@ -187,7 +198,7 @@ sub cluster_blob{
 		return $ret;
         } elsif ($cluster{"compression_type"} == 1) {
 		my $data;
-		read(FILE, $data, $size);
+		xread(\*FILE, $data, $size);
 		$_ = substr $data, $blob*4, 4;my $posStart = unpack("I");
 		$_ = substr $data, $blob*4+4, 4;my $posEnd = unpack("I");
 		$ret = substr $data, $posStart, $posEnd-$posStart;
