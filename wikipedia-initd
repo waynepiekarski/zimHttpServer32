@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+
+# Start this as late as possible
+START=99
+
+# Enable this script by running: /etc/init.d/wikipedia-initd enable
+
+
+cd /128gb
+./start-wiki.sh >/dev/null 2>&1  &
+
