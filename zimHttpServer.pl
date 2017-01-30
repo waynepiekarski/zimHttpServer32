@@ -174,11 +174,11 @@ sub entry{
 	chop($article{"title"});
 	xread(\*FILE, $_, $article{"parameter_len"}); $article{"parameter"} = unpack("H*");
 
-        print "entry == ";
-        foreach my $name (sort keys %article) {
-            printf "[%s]=[%s] ", $name, $article{$name};
-        }
-        print "\n";
+#        print "entry == ";
+#        foreach my $name (sort keys %article) {
+#            printf "[%s]=[%s] ", $name, $article{$name};
+#        }
+#        print "\n";
 }
 
 # read CLUSTER NUMBER into CLUSTER POINTER LIST into «file.zim»
@@ -218,7 +218,7 @@ sub cluster_blob{
             $size64 = $size64 - 1;
             $adjust = 1;
         }
-        print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
+        # print STDERR "size64=$size64, pos64=$pos64, adjust=$adjust, oldpos=($old_pos64, $old_pos), oldsize=($old_size64, $old_size), new_size=$size\n";
         die "size64 is wrong, data has been corrupted somehow!\n", if $size64 < 0;
         # Implement 64-bit seek
         xseek(\*FILE, 0, 0); # Reset to start of file, then break up 64-bit seeks into 31-bit blocks
