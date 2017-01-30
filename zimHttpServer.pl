@@ -3,6 +3,18 @@
 use strict;
 use Socket;
 
+my $UNAME=`uname -m`;
+chomp($UNAME);
+print "UNAME = [$UNAME]\n";
+my $XZ;
+if (-e "./$UNAME/xz") {
+    $XZ="./$UNAME/xz";
+    print "Detected $UNAME, using local xz binary at $XZ\n";
+} else {
+    print "Using system xz binary\n";
+    $XZ="xz";
+}
+
 # open «file.zim». For more information see internet «openzim.org»
 print "Opening ZIM file $ARGV[0]\n";
 use Fcntl;
@@ -228,7 +240,7 @@ sub cluster_blob{
 		open(DATA, ">$file.xz");
 		print DATA $data_compressed;
 		close(DATA);
-		`xz -d -f $file.xz`;
+		`$XZ -d -f $file.xz`;
 		open(DATA, "$file");
 #	my $blob1;
 #	xread(DATA, $blob1, 4);
