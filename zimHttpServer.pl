@@ -2,6 +2,7 @@
 
 use strict;
 use Socket;
+my %article;
 
 my $UNAME=`uname -m`;
 chomp($UNAME);
@@ -22,6 +23,7 @@ use Fcntl 'SEEK_CUR';
 use Fcntl 'SEEK_SET';
 # O_LARGEFILE for > 4Gb files is included with sysopen() automatically
 sysopen (FILE, $ARGV[0], O_RDONLY) || die "File not found.\n";
+
 
 sub xread {
     my $result = sysread($_[0], $_[1], $_[2]);
@@ -88,6 +90,60 @@ foreach my $name (sort keys %header) {
 }
 print "\n";
 
+
+# Create the index files if they do not exist yet
+my $file = $ARGV[0];
+$file =~ s/zim$/index/;
+my $checkindex = $file.".z";
+unless(-e $checkindex){
+    print "Did not find $checkindex file, so will regenerate them all for a-z\n";
+    # Open up 26 index files for writing
+    $|=1;
+    my @indexhandles;
+    for(my $i=0; $i<26; $i++)
+    {
+        # localize the file glob, so FILE is unique to the inner loop.
+        local *FILE;
+        my $ch = pack("c",$i+97); # a==97
+        my $filename = "$file.$ch";
+        open(FILE, ">$filename") || die;
+        print "Opening file $filename for writing\n";
+        # push the typeglobe to the end of the array
+        push(@indexhandles, *FILE);
+    }
+    
+    print "Making index files $file.a-z\n           /$header{articleCount}";
+    for(my $number = 0; $number<$header{"articleCount"};$number++){
+        &entry($number);
+#	&entry(title_pointer($number));
+        my $alpha = $article{url};
+        $alpha =~ /[A-Za-z]/;
+        my $result = $&;
+        my $firstlower = lc($result);
+        my $first = unpack("c",$firstlower);
+        my $ofs = $first-97; # a==97
+        my $idx = $indexhandles[$ofs];
+        
+#       print "Converted $article{url} into index [$firstlower = $ofs]\n";
+        
+        if ($article{namespace} ne "A") {
+#           print "Ignoring $article{url} since it is not an A article!\n";
+        } else {
+            print $idx "/$article{namespace}/$article{url}\n";
+        }
+        print "\r$number" unless $number%10000;
+    }
+    print "\n";
+    $|=0;
+    
+    foreach $file (@indexhandles)
+    {
+        close $file;
+    }
+}
+print "Found all index files $checkindex\n";
+
+
 sub get_null_string {
     my $out = "";
     while(1) {
@@ -143,7 +199,6 @@ sub title_pointer{
 # read ARTICLE NUMBER into «file.zim»
 # load ARTICLE ENTRY that is point by ARTICLE NUMBER POINTER
 # or load REDIRECT ENTRY
-my %article;
 sub entry{
 # directory entries
 # article entry
@@ -306,57 +361,7 @@ sub output_article{
 			return "", unless $url =~ /^\/A/;
 #			($url) = grep {length($_)>1} split(/[\/\.\s]/, $url);
 			$url =~ s#/A/##;
-			# make index
-			my $file = $ARGV[0];
-			$file =~ s/zim$/index/;
-                        my $checkindex = $file.".z";
-			unless(-e $checkindex){
-                            print "Did not find $checkindex file, so will regenerate them all for a-z\n";
-                            # Open up 26 index files for writing
-                            $|=1;
-                            my @indexhandles;
-                            for(my $i=0; $i<26; $i++)
-                            {
-                                #localize the file glob, so FILE is unique to
-                                #    the inner loop.
-                                local *FILE;
-                                my $ch = pack("c",$i+97); # a==97
-                                my $filename = "$file.$ch";
-                                open(FILE, ">$filename") || die;
-                                print "Opening file $filename for writing\n";
-                                #push the typeglobe to the end of the array
-                                push(@indexhandles, *FILE);
-                            }
-                            
-                            print "Making index files $file.a-z\n           /$header{articleCount}";
-                            for(my $number = 0; $number<$header{"articleCount"};$number++){
-                                &entry($number);
-#	&entry(title_pointer($number));
-                                my $alpha = $article{url};
-                                $alpha =~ /[A-Za-z]/;
-                                my $result = $&;
-                                my $firstlower = lc($result);
-                                my $first = unpack("c",$firstlower);
-                                my $ofs = $first-97; # a==97
-                                my $idx = $indexhandles[$ofs];
 
-#                                print "Converted $article{url} into index [$firstlower = $ofs]\n";
-                                
-                                if ($article{namespace} ne "A") {
-#                                    print "Ignoring $article{url} since it is not an A article!\n";
-                                } else {
-                                    print $idx "/$article{namespace}/$article{url}\n";
-                                }
-                                print "\r$number" unless $number%10000;
-                            }
-                            print "\n";
-                            $|=0;
-
-                            foreach $file (@indexhandles)
-                            {
-                                close $file;
-                            }
-			}
 			# search a-z index
 
                         # pattern=/A/
