@@ -375,7 +375,7 @@ sub output_article{
 			my $message = "<html><body>\n" ;
 			open(INDEX, "$file.$firstlower");
 			while(<INDEX>){
-				if(/$url/){
+				if(/$url/i){
 					chop;
 					$message .= "<a href='$_'>$_</a><br/>\n";
 				}
