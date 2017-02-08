@@ -309,30 +309,73 @@ sub output_article{
 			# make index
 			my $file = $ARGV[0];
 			$file =~ s/zim$/index/;
-			unless(-e $file){
-				$|=1;
-				open(INDEX, ">$file");
-					print "Make file $file\n           /$header{articleCount}";
-				for(my $number = 0; $number<$header{"articleCount"};$number++){
-					&entry($number);
+                        my $checkindex = $file.".z";
+			unless(-e $checkindex){
+                            print "Did not find $checkindex file, so will regenerate them all for a-z\n";
+                            # Open up 26 index files for writing
+                            $|=1;
+                            my @indexhandles;
+                            for(my $i=0; $i<26; $i++)
+                            {
+                                #localize the file glob, so FILE is unique to
+                                #    the inner loop.
+                                local *FILE;
+                                my $ch = pack("c",$i+97); # a==97
+                                my $filename = "$file.$ch";
+                                open(FILE, ">$filename") || die;
+                                print "Opening file $filename for writing\n";
+                                #push the typeglobe to the end of the array
+                                push(@indexhandles, *FILE);
+                            }
+                            
+                            print "Making index files $file.a-z\n           /$header{articleCount}";
+                            for(my $number = 0; $number<$header{"articleCount"};$number++){
+                                &entry($number);
 #	&entry(title_pointer($number));
-					print INDEX "/$article{namespace}/$article{url}\n";
-					print "\r$number" unless $number%10000;
-				}
-				print "\n";
-				$|=0;
-				close(INDEX);
+                                my $alpha = $article{url};
+                                $alpha =~ /[A-Za-z]/;
+                                my $result = $&;
+                                my $firstlower = lc($result);
+                                my $first = unpack("c",$firstlower);
+                                my $ofs = $first-97; # a==97
+                                my $idx = $indexhandles[$ofs];
+
+#                                print "Converted $article{url} into index [$firstlower = $ofs]\n";
+                                
+                                if ($article{namespace} ne "A") {
+#                                    print "Ignoring $article{url} since it is not an A article!\n";
+                                } else {
+                                    print $idx "/$article{namespace}/$article{url}\n";
+                                }
+                                print "\r$number" unless $number%10000;
+                            }
+                            print "\n";
+                            $|=0;
+
+                            foreach $file (@indexhandles)
+                            {
+                                close $file;
+                            }
 			}
-			# search index
-			print "Searching for [$url] from index file $file\n";
+			# search a-z index
+
+                        # pattern=/A/
+                        my $alpha = $article{url};
+			$alpha =~ s#pattern=/A/##; # Strip off the search query text
+                        $alpha =~ /[A-Za-z]/; # Find the first A-Za-z character and ignore everything else
+                        my $result = $&; # This is needed to extract out the value, $alpha has not been changed
+                        my $firstlower = lc($result);
+
+			print "Searching for [$url] from a-z fast index file $file.$firstlower\n";
 			my $message = "<html><body>\n" ;
-			open(INDEX, "$file");
+			open(INDEX, "$file.$firstlower");
 			while(<INDEX>){
 				if(/$url/){
 					chop;
 					$message .= "<a href='$_'>$_</a><br/>\n";
 				}
 			}
+                        print "Completed search for [$url] from a-z fast index file $file.$firstlower\n";
 			$message .= "</body></html>\n";
                         # Find text/html in the mime array, we need to return this as the Content-Type
                         use List::Util qw(first);
