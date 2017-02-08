@@ -373,14 +373,20 @@ sub output_article{
 
 			print "Searching for [$url] from a-z fast index file $file.$firstlower\n";
 			my $message = "<html><body>\n" ;
+                        my $result = "";
+                        my $count = 0;
 			open(INDEX, "$file.$firstlower");
 			while(<INDEX>){
 				if(/$url/i){
 					chop;
-					$message .= "<a href='$_'>$_</a><br/>\n";
+					$result .= "<a href='$_'>$_</a><br/>\n";
+                                        $count = $count + 1;
 				}
 			}
-                        print "Completed search for [$url] from a-z fast index file $file.$firstlower\n";
+                        print "Completed search for [$url] with $count results from a-z fast index file $file.$firstlower\n";
+                        $message .= "<meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">\n";
+                        $message .= "Found $count results for [$url] search<br/>\n";
+                        $message .= $result;
 			$message .= "</body></html>\n";
                         # Find text/html in the mime array, we need to return this as the Content-Type
                         use List::Util qw(first);
