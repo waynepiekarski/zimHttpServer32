@@ -1,5 +1,13 @@
 #!/usr/bin/perl
 
+#
+# Notes from Wayne Piekarski, who made significant changes for 64-bit support:
+#
+# This file came from https://sourceforge.net/p/kiwix/tools/ci/master/tree/tools/scripts/zimHttpServer.pl
+# The author of the git commit adding it appears to be Emmanuel Engelhart (kelson42)
+# The license for the repository was marked as GPLv3 https://sourceforge.net/directory/os:mac/license:gplv3/
+#
+
 use strict;
 use Socket;
 my %article;
