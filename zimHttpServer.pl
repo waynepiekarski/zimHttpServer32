@@ -204,6 +204,12 @@ sub title_pointer{
 	return $ret;
 }
 
+# There is no signed little-endian conversion for unpack, so need to use "v" and then this
+sub uint16_int16 {
+  my $v = shift;
+  return ($v & 0x8000) ? -((~$v & 0xffff) + 1) : $v;
+}
+
 # read ARTICLE NUMBER into «file.zim»
 # load ARTICLE ENTRY that is point by ARTICLE NUMBER POINTER
 # or load REDIRECT ENTRY
@@ -221,7 +227,7 @@ sub entry{
         }
 	xseek(\*FILE, $pos,1);
         
-	xread(\*FILE, $_, 2); $article{"mimetype"} = unpack("v");
+	xread(\*FILE, $_, 2); $article{"mimetype"} = uint16_int16(unpack("v"));
 	xread(\*FILE, $_, 1); $article{"parameter_len"} = unpack("H*");
 	xread(\*FILE, $_, 1); $article{"namespace"} = unpack("a");
 	xread(\*FILE, $_, 4); $article{"revision"} = unpack("V");
