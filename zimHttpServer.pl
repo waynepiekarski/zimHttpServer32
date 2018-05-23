@@ -73,17 +73,17 @@ sub xseek {
 my %header;
 xseek(\*FILE, 0, 0); # no necesary because it must be it
 xread(\*FILE, $_, 4); $header{"magicNumber"} = unpack("c*"); # ZIM\x04
-xread(\*FILE, $_, 4); $header{"version"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"version"} = unpack("V");
 xread(\*FILE, $_, 16); $header{"uuid"} = unpack("H*");
-xread(\*FILE, $_, 4); $header{"articleCount"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"clusterCount"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"articleCount"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"clusterCount"} = unpack("V");
 
-xread(\*FILE, $_, 4); $header{"urlPtrPos"} = unpack("I");     xread(\*FILE, $_, 4); $header{"zero1"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"titlePtrPos"} = unpack("I");   xread(\*FILE, $_, 4); $header{"zero2"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"clusterPtrPos"} = unpack("I"); xread(\*FILE, $_, 4); $header{"zero3"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"mimeListPos"} = unpack("I");   xread(\*FILE, $_, 4); $header{"zero4"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"mainPage"} = unpack("I");
-xread(\*FILE, $_, 4); $header{"layoutPage"} = unpack("I");
+xread(\*FILE, $_, 4); $header{"urlPtrPos"} = unpack("V");     xread(\*FILE, $_, 4); $header{"zero1"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"titlePtrPos"} = unpack("V");   xread(\*FILE, $_, 4); $header{"zero2"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"clusterPtrPos"} = unpack("V"); xread(\*FILE, $_, 4); $header{"zero3"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"mimeListPos"} = unpack("V");   xread(\*FILE, $_, 4); $header{"zero4"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"mainPage"} = unpack("V");
+xread(\*FILE, $_, 4); $header{"layoutPage"} = unpack("V");
 xread(\*FILE, $_, 8); $header{"checksumPos"} = unpack("H*");
 
 # Check that none of the *PtrPos values exceed 32-bits
@@ -185,8 +185,8 @@ sub url_pointer{
 	my $pos = $header{"urlPtrPos"};
 	$pos += $article*8;
 	xseek(\*FILE, $pos, 0);
-        xread(\*FILE, $_, 4); my $ret = unpack("I");
-        xread(\*FILE, $_, 4); my $ret64 = unpack("I");
+        xread(\*FILE, $_, 4); my $ret = unpack("V");
+        xread(\*FILE, $_, 4); my $ret64 = unpack("V");
 	return ($ret64, $ret);
 }
 
@@ -200,7 +200,7 @@ sub title_pointer{
 	my $pos = $header{"titlePtrPos"};
 	$pos += $article_by_title*4;
 	xseek(\*FILE, $pos,0);
-	xread(\*FILE, $_, 4); my $ret = unpack("I");
+	xread(\*FILE, $_, 4); my $ret = unpack("V");
 	return $ret;
 }
 
@@ -221,15 +221,15 @@ sub entry{
         }
 	xseek(\*FILE, $pos,1);
         
-	xread(\*FILE, $_, 2); $article{"mimetype"} = unpack("s");
+	xread(\*FILE, $_, 2); $article{"mimetype"} = unpack("v");
 	xread(\*FILE, $_, 1); $article{"parameter_len"} = unpack("H*");
 	xread(\*FILE, $_, 1); $article{"namespace"} = unpack("a");
-	xread(\*FILE, $_, 4); $article{"revision"} = unpack("I");
+	xread(\*FILE, $_, 4); $article{"revision"} = unpack("V");
 	if($article{"mimetype"} <0){
-		xread(\*FILE, $_, 4); $article{"redirect_index"} = unpack("I");
+		xread(\*FILE, $_, 4); $article{"redirect_index"} = unpack("V");
 	}else{
-		xread(\*FILE, $_, 4); $article{"cluster_number"} = unpack("I");
-		xread(\*FILE, $_, 4); $article{"blob_number"} = unpack("I");
+		xread(\*FILE, $_, 4); $article{"cluster_number"} = unpack("V");
+		xread(\*FILE, $_, 4); $article{"blob_number"} = unpack("V");
 	}
         $article{"url"} = get_null_string();
         $article{"title"} = get_null_string();
@@ -253,8 +253,8 @@ sub cluster_pointer{
 	my $pos = $header{"clusterPtrPos"};
 	$pos += $cluster*8;
 	xseek(\*FILE, $pos,0);
-	xread(\*FILE, $_, 4); my $ret = unpack("I");
-        xread(\*FILE, $_, 4); my $ret64 = unpack("I");
+	xread(\*FILE, $_, 4); my $ret = unpack("V");
+        xread(\*FILE, $_, 4); my $ret64 = unpack("V");
 	return ($ret64, $ret);
 }
 
@@ -309,8 +309,8 @@ sub cluster_blob{
 #	xread(DATA, $blob1, 4);
 #	my $blob_count = int($blob1/4);
 		seek(DATA, $blob*4, 0);
-		read(DATA, $_, 4); my $posStart = unpack("I");
-		read(DATA, $_, 4); my $posEnd = unpack("I");
+		read(DATA, $_, 4); my $posStart = unpack("V");
+		read(DATA, $_, 4); my $posEnd = unpack("V");
 		seek(DATA, $posStart, 0);
 		read(DATA, $ret, $posEnd-$posStart);
 		close(DATA);
@@ -319,8 +319,8 @@ sub cluster_blob{
         } elsif ($cluster{"compression_type"} == 1) {
 		my $data;
 		xread(\*FILE, $data, $size);
-		$_ = substr $data, $blob*4, 4;my $posStart = unpack("I");
-		$_ = substr $data, $blob*4+4, 4;my $posEnd = unpack("I");
+		$_ = substr $data, $blob*4, 4;my $posStart = unpack("V");
+		$_ = substr $data, $blob*4+4, 4;my $posEnd = unpack("V");
 		$ret = substr $data, $posStart, $posEnd-$posStart;
 		return $ret;
 	} else {
