@@ -92,7 +92,7 @@ die "titlePtrPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"ze
 die "clusterPtrPos exceeds 64-bit, cannot run on 32-bit machine", if $header{"zero3"} != 0;
 die "mimeListPos exceeds 64-bit, cannot run on 32-bit machine",   if $header{"zero4"} != 0;
 
-print "ZIM header: " . join(", ", %header);
+print "ZIM header: " . join(", ", %header) . "\n";
 foreach my $name (sort keys %header) {
     printf "[%s]=[%s] ", $name, $header{$name};
 }
