@@ -1,0 +1,15 @@
+    - Busybox (tested 1.24 and current 1.28) xz applet does not work
+      (reports "corrupted data" to the terminal when applied to the
+      xz data extracted from the zim file by zimHttpServer.pl script)
+
+    - xz from xz-utils works, but only in combination with swap
+      enabled (xz fragments in zim files may have large dict size,
+      expect the xz decompressor to use ~65mb to decompress; because
+      of this 7270 and older boxes may not be suited to serve a zim)
+
+    - thus minimum RAM requirement is 128MB to get heavily compressed
+      zim files working with AVM Fritz!Box routers
+
+    - the script expects native xz binary in /mod/external/usr/bin,
+      need to change the location in the script, if xz-utils is not
+      externalized
