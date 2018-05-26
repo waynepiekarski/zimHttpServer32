@@ -13,22 +13,21 @@ use Socket;
 use List::Util qw( min max );
 
 my %article;
-
-my $UNAME=`uname -m`;
-chomp($UNAME);
-print "UNAME = [$UNAME]\n";
 my $XZ;
-if (-e "/mod/external/usr/bin/xz") {
-    $XZ="/mod/external/usr/bin/xz";
-    print "Detected standalone xz, using local xz binary at $XZ\n";
-} else {
-if (-e "./$UNAME/xz") {
-    $XZ="./$UNAME/xz";
-    print "Detected $UNAME, using local xz binary at $XZ\n";
-} else {
-    print "Using system xz binary\n";
+if (-e "/usr/bin/xz" or -e "/bin/xz") {
     $XZ="xz";
-}
+    print "Using system xz binary.\n";
+} else {
+    my $UNAME=`uname -m`;
+    chomp($UNAME);
+    print "UNAME = [$UNAME]\n";
+
+    if (-e "./$UNAME/xz") {
+        $XZ="./$UNAME/xz";
+        print "Using local xz binary at $XZ\n";
+    } else {
+        die "No suitable xz decompressor found\n";
+    }
 }
 
 # open «file.zim». For more information see internet «openzim.org»
