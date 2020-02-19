@@ -1,0 +1,10 @@
+    - Busybox (tested 1.24 and current 1.28) xz applet appears to not
+      work (reports "corrupted data" to the terminal) when applied to
+      the xz data extracted from zim files, _but_ the error message
+      is wrong - if enough RAM (physical and swap) is available the
+      xz applet will work just as well as the binary from xz-utils.
+
+    - Thus minimum RAM requirement is 128 MB (physical, and another
+      64 to 128 MB using swap) to serve heavily compressed zim files
+      from AVM Fritz!Box routers, i.e. it may not work with 7270 and
+      older devices
